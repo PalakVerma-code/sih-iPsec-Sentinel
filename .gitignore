@@ -1,0 +1,42 @@
+# Python environments
+venv/
+.venv/
+env/
+
+# Python cache and tooling
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local secrets and environment files
+.env
+.env.*
+!.env.example
+
+# Runtime data and temporary uploads
+uploads/*
+!uploads/.gitkeep
+*.log
+
+# Generated packet captures and reports
+testbed_*.pcap
+sih_master_dataset.pcap
+*.pcapng
+IPsec_Security_Audit_Report.pdf
+IPsec_Security_Report.pdf
+
+# Build and packaging artifacts
+build/
+dist/
+*.egg-info/
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
