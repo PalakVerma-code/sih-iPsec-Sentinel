@@ -4,6 +4,10 @@
 > **Domain:** Cybersecurity, AI/ML, and encrypted network forensics  
 > **Target:** Local-first web application and live IPsec capture analyzer
 
+<img width="1331" height="686" alt="image" src="https://github.com/user-attachments/assets/e1e60ced-07fe-469e-8f75-9871047cca9d" />
+<img width="1333" height="243" alt="image" src="https://github.com/user-attachments/assets/259368f0-e518-435e-a796-866b363a71ed" />
+
+
 ## Executive Summary
 
 **IPsec Sentinel** is a local-first security assessment platform for IKEv1, IKEv2, ESP, NAT-T, and AH packet captures. It inspects visible negotiation metadata, evaluates cryptographic posture with transparent rules, classifies encrypted traffic from packet behavior, generates hardened configuration snippets, and exports an executive PDF report without decrypting VPN payloads.
