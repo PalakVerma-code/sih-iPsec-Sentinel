@@ -1,0 +1,7 @@
+Flask>=3.0,<4
+gunicorn>=21,<27
+numpy>=1.26,<3
+scapy>=2.5,<3
+scikit-learn>=1.4,<2
+requests>=2.31,<3
+reportlab>=4.0,<6

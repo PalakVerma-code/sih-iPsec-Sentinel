@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPsec Sentinel | SIH Assessment Framework</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans p-6 min-h-screen">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-center border-b border-slate-800 pb-4 mb-6 gap-4">
+            <div>
+                <div class="flex items-center gap-3">
+                    <h1 class="text-2xl font-bold text-cyan-400">IPsec Sentinel</h1>
+                    <span class="bg-cyan-500/10 text-cyan-400 text-xs px-2 py-1 rounded border border-cyan-500/30">SIH26160 Engine</span>
+                </div>
+                <p class="text-xs text-slate-400">Automated Cryptographic Auditor & Encrypted Traffic Inference Platform</p>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full md:w-auto">
+                <button id="pdfBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-4 py-2 rounded transition font-medium flex items-center justify-center gap-2 min-h-10">
+                    <span>Download PDF Audit Report</span>
+                </button>
+                <button id="liveBtn" class="bg-red-600 hover:bg-red-500 text-white text-xs px-4 py-2 rounded transition font-medium flex items-center justify-center gap-2 min-h-10">
+                    <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+                    <span id="liveText">Start Live Capture</span>
+                </button>
+                <button id="sampleBtn" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs px-4 py-2 rounded transition font-medium min-h-10">Load SIH Testbed PCAP</button>
+            </div>
+        </header>
+
+        <!-- PCAP upload -->
+        <section id="dropZone" class="border-2 border-dashed border-slate-700 hover:border-cyan-500 bg-slate-900/50 min-h-48 p-6 rounded-xl text-center cursor-pointer transition-all flex items-center justify-center mb-6">
+            <input type="file" id="fileInput" accept=".pcap,.pcapng" class="hidden">
+            <div class="flex flex-col items-center justify-center gap-3">
+                <svg class="w-10 h-10 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                </svg>
+                <p class="text-sm text-slate-300 font-medium">Drag and drop a PCAP or PCAPNG file, or <span class="text-cyan-400 underline">browse files</span></p>
+                <p class="text-xs text-slate-500" id="fileName">Supports Wireshark captures for cryptographic assessment</p>
+            </div>
+        </section>
+
+        <!-- Dynamic Security Parameters Bar -->
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-6 text-center text-xs">
+            <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg"><p class="text-slate-500 uppercase tracking-wider mb-1">IP Version</p><p id="ipVer" class="font-bold text-cyan-400 text-sm">--</p></div>
+            <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg"><p class="text-slate-500 uppercase tracking-wider mb-1">Tunnel Mode</p><p id="mode" class="font-bold text-cyan-400 text-sm">--</p></div>
+            <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg"><p class="text-slate-500 uppercase tracking-wider mb-1">PFS Status</p><p id="pfs" class="font-bold text-emerald-400 text-sm">--</p></div>
+            <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg"><p class="text-slate-500 uppercase tracking-wider mb-1">AH Protocol</p><p id="ah" class="font-bold text-slate-300 text-sm">--</p></div>
+            <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg"><p class="text-slate-500 uppercase tracking-wider mb-1">Replay Protection</p><p id="replay" class="font-bold text-slate-300 text-sm">--</p></div>
+            <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg"><p class="text-slate-500 uppercase tracking-wider mb-1">Risk Score</p><p id="risk" class="font-bold text-amber-500 text-sm">--</p></div>
+            <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg"><p class="text-slate-500 uppercase tracking-wider mb-1">AI Confidence</p><p id="conf" class="font-bold text-cyan-400 text-sm">--</p></div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <!-- Threat Matrix -->
+            <div class="lg:col-span-2 bg-slate-900 border border-slate-800 p-5 rounded-xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-md font-semibold text-slate-200">Compliance & Threat Matrix</h2>
+                    <select id="standardSelect" class="bg-slate-800 text-cyan-400 text-xs px-3 py-1.5 rounded border border-slate-700 focus:outline-none focus:border-cyan-500 font-medium cursor-pointer">
+                        <option value="NIST">NIST SP 800-77 Standard</option>
+                        <option value="ANSSI">ANSSI Defense Standard</option>
+                        <option value="FIPS">FIPS 140-3 Compliance</option>
+                    </select>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-800 text-slate-400">
+                            <tr><th class="p-2">Severity</th><th class="p-2">Threat Finding</th><th class="p-2">Mitigation Recommendation</th></tr>
+                        </thead>
+                        <tbody id="threatBody"><tr><td colspan="3" class="p-4 text-center text-slate-500">No PCAP Analyzed yet. Click "Load SIH Testbed PCAP".</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- AI Classification -->
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl flex flex-col justify-between">
+                <h2 class="text-md font-semibold text-slate-200 mb-2">AI ESP Payload Classification</h2>
+                <div class="relative flex justify-center items-center my-auto">
+                    <canvas id="trafficChart" class="max-h-56"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Automated Remediation Scripts -->
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl">
+            <h2 class="text-md font-semibold text-cyan-400 mb-3">⚡ Auto-Generated Hardened VPN Configurations (One-Click Fix)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <p class="text-xs text-slate-400 mb-1">Linux StrongSwan (`/etc/ipsec.conf`)</p>
+                    <textarea id="strongswanText" class="w-full h-32 bg-slate-950 border border-slate-800 text-emerald-400 p-2 font-mono text-xs rounded focus:outline-none" readonly></textarea>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-400 mb-1">Cisco ASA Command Snippet</p>
+                    <textarea id="ciscoText" class="w-full h-32 bg-slate-950 border border-slate-800 text-emerald-400 p-2 font-mono text-xs rounded focus:outline-none" readonly></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+      const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+dropZone.addEventListener('click', () => fileInput.click());
+
+dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('border-cyan-400', 'bg-slate-800/80');
+});
+
+dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('border-cyan-400', 'bg-slate-800/80');
+});
+
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('border-cyan-400', 'bg-slate-800/80');
+    if (e.dataTransfer.files.length) {
+        handleFileUpload(e.dataTransfer.files[0]);
+    }
+});
+
+fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length) {
+        handleFileUpload(e.target.files[0]);
+    }
+});
+
+function handleFileUpload(file) {
+    document.getElementById('fileName').innerText = "Uploading & Analyzing: " + file.name;
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('standard', document.getElementById('standardSelect').value);
+
+    fetch('/api/analyze', {
+        method: 'POST',
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if(data.error) {
+            alert(data.error);
+        } else {
+            renderUI(data);
+            document.getElementById('fileName').innerText = "Analysis Complete for " + file.name;
+        }
+    })
+    .catch(err => {
+        console.error("Upload error:", err);
+        alert("Failed to analyze PCAP file.");
+    });
+}
+        let chart;
+        function renderUI(data) {
+            document.getElementById('ipVer').innerText = data.sa.ip_version;
+            document.getElementById('mode').innerText = data.sa.mode;
+            document.getElementById('pfs').innerText = data.sa.pfs_status;
+            document.getElementById('ah').innerText = data.sa.ah_protocol;
+            document.getElementById('replay').innerText = data.sa.replay_window;
+
+            // Dynamic Risk Score & Color
+            const riskElem = document.getElementById('risk');
+            riskElem.innerText = data.risk_score + ' / 100';
+            if (data.risk_score > 70) {
+                riskElem.className = 'font-bold text-red-500 text-sm animate-pulse';
+            } else if (data.risk_score > 30) {
+                riskElem.className = 'font-bold text-amber-500 text-sm';
+            } else {
+                riskElem.className = 'font-bold text-emerald-400 text-sm';
+            }
+
+            document.getElementById('conf').innerText = data.confidence + '%';
+
+            let tbody = document.getElementById('threatBody');
+            tbody.innerHTML = '';
+            data.threats.forEach(t => {
+                tbody.innerHTML += `<tr class="border-b border-slate-800">
+                    <td class="p-2 font-bold ${t.severity === 'Critical' ? 'text-red-400' : (t.severity === 'High' ? 'text-amber-400' : 'text-emerald-400')}">${t.severity}</td>
+                    <td class="p-2">${t.issue}</td>
+                    <td class="p-2 text-slate-400">${t.recommendation}</td>
+                </tr>`;
+            });
+
+            document.getElementById('strongswanText').value = data.remediation.strongswan;
+            document.getElementById('ciscoText').value = data.remediation.cisco;
+
+            if (chart) chart.destroy();
+            chart = new Chart(document.getElementById('trafficChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(data.traffic),
+                    datasets: [{ data: Object.values(data.traffic), backgroundColor: ['#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'] }]
+                },
+                options: { plugins: { legend: { labels: { color: '#94a3b8', font: { size: 10 } } } } }
+            });
+        }
+
+        document.getElementById('sampleBtn').addEventListener('click', () => {
+            fetch('/api/sample').then(r => r.json()).then(d => renderUI(d));
+        });
+
+        document.getElementById('standardSelect').addEventListener('change', (e) => {
+            const selectedStd = e.target.value;
+            fetch(`/api/sample?standard=${selectedStd}`)
+                .then(r => r.json())
+                .then(data => renderUI(data));
+        });
+
+        let isCapturing = false;
+const liveBtn = document.getElementById('liveBtn');
+const liveText = document.getElementById('liveText');
+
+liveBtn.addEventListener('click', () => {
+    if (!isCapturing) {
+                // Update the UI immediately while capture setup runs in the backend.
+                isCapturing = true;
+                liveText.innerText = "Stop Capture & Analyze";
+                liveBtn.classList.remove('bg-red-600');
+                liveBtn.classList.add('bg-amber-600');
+
+        fetch('/api/live/start', { method: 'POST' })
+                    .catch(err => {
+                        console.error("Start Capture Error:", err);
+                        isCapturing = false;
+                        liveText.innerText = "Start Live Capture";
+                        liveBtn.classList.remove('bg-amber-600');
+                        liveBtn.classList.add('bg-red-600');
+                    });
+    } else {
+        liveText.innerText = "Processing Capture...";
+        fetch('/api/live/stop', { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                isCapturing = false;
+                liveText.innerText = "Start Live Capture";
+                        liveBtn.classList.remove('bg-amber-600');
+                        liveBtn.classList.add('bg-red-600');
+                renderUI(data);
+                    })
+                    .catch(err => {
+                        console.error("Stop Capture Error:", err);
+                        isCapturing = false;
+                        liveText.innerText = "Start Live Capture";
+                        liveBtn.classList.remove('bg-amber-600');
+                        liveBtn.classList.add('bg-red-600');
+            });
+    }
+});
+document.getElementById('pdfBtn').addEventListener('click', () => {
+    const element = document.body;
+    const opt = {
+        margin:       0.3,
+        filename:     'IPsec_Security_Audit_Report.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'landscape' }
+    };
+    html2pdf().set(opt).from(element).save();
+});
+    </script>
+</body>
+</html>
